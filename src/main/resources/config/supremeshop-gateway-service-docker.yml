@@ -1,0 +1,91 @@
+server:
+  port: 5012
+
+spring:
+#  application:
+#    name: supremeshop-gateway-service
+  output:
+    ansi:
+      enabled: always
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        #Categories service route
+        - id: supremeshop-category-service
+          #uri: http://localhost:5016
+          uri: lb://SUPREMESHOP-CATEGORY-SERVICE
+          predicates:
+            - Path=/gateway-catg-sv/**
+          filters:
+            - RewritePath=/gateway-catg-sv/(?<segment>.*),/${segment}
+        ###brands service
+        - id: SUPREMESHOP-BRANDS-SERVICE
+          uri: lb://SUPREMESHOP-BRANDS-SERVICE
+          predicates:
+            - Path=/gateway-brand-sv/**
+          filters:
+            - RewritePath=/gateway-brand-sv/(?<segment>.*),/${segment}
+        ####open Api
+        - id: openapi
+          uri: http://localhost:${server.port}
+          predicates:
+            - Path=/v3/api-docs/**
+          filters:
+            - RewritePath=/v3/api-docs/(?<path>.*), /$\{path}/v3/api-docs
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+
+#eureka:
+#  client:
+#    serviceUrl:
+#      defaultZone: http://${SERVICE_REGISTRY_HOST:localhost}:${SERVICE_REGISTRY_PORT:8761}/eureka/
+#  instance:
+#    hostname: ${SERVICE_REGISTRY_HOST:localhost}
+#    preferIpAddress: true
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://supremeshop-registry-svc:8761/eureka/
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{traceId:-},%X{spanId:-}] ${LOG_LEVEL_PATTERN:-%5p} %m%n"
+
+springdoc:
+#  enable-native-support: true
+#  api-docs:
+#    groups:
+#      enabled: true
+#    enabled: true
+#  group-configs:
+#    - group: api-gateway
+#      packages-to-scan:
+#        - com.supremeshop.platform
+#      display-name: API Gateway
+#    - group: category-service
+#      paths-to-match:
+#        - /gateway-catg-sv/**
+#      display-name: category Service
+#    - group: brand-service
+#      paths-to-match:
+#        - /gateway-brand-sv/**
+#      display-name: Brand Service
+  swagger-ui:
+#    config-url: /v3/api-docs/swagger-config
+#    url: /v3/api-docs
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway
+      - url: /gateway-catg-sv/v3/api-docs
+        name: Category Service
+      - url: /gateway-brand-sv/v3/api-docs
+        name: Brand Service
